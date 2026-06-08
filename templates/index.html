@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LRU Cache Visualizer</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+        }
+
+        .container {
+            width: 800px;
+            margin: 40px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            flex: 1;
+        }
+
+        button {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 5px;
+            background: #3498db;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        button:disabled {
+            background: gray;
+            cursor: not-allowed;
+        }
+
+        #result {
+            margin-top: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        #cache {
+            display: flex;
+            justify-content: center;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        .box {
+            width: 80px;
+            height: 55px;
+            margin: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .recent {
+            background: #2ecc71;
+        }
+
+        .normal {
+            background: #3498db;
+        }
+
+        .evicted {
+            background: #e74c3c !important;
+            animation: fadeOut 0.6s forwards;
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.5); }
+        }
+
+        .section {
+            margin-top: 20px;
+        }
+
+        .label {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>LRU Cache Visualizer</h2>
+
+<div class="section">
+    <div class="label">Key / Value Input</div>
+    <div class="controls">
+        <input type="number" id="key" placeholder="Key">
+        <input type="number" id="value" placeholder="Value">
+    </div>
+</div>
+
+<div class="section">
+    <div class="controls">
+        <button id="putBtn" onclick="put()">PUT</button>
+        <button onclick="get()">GET</button>
+        <button onclick="refresh()">Refresh</button>
+        <button onclick="reset()">Reset</button>
+    </div>
+</div>
+
+<div id="result"></div>
+
+<h4 style="text-align:center; margin-top:20px;">
+    Cache State (Most Recent → Left)
+</h4>
+
+<div id="cache"></div>
+
+</div>
+
+<script>
+
+let prevCache = [];
+
+// ---------------- BUTTON CONTROL ----------------
+document.getElementById("key").addEventListener("input", toggleButtons);
+document.getElementById("value").addEventListener("input", toggleButtons);
+
+function toggleButtons() {
+    let key = document.getElementById("key").value;
+    let value = document.getElementById("value").value;
+
+    document.getElementById("putBtn").disabled = !(key && value);
+}
+
+// ---------------- PUT ----------------
+function put() {
+    let key = document.getElementById("key").value;
+    let value = document.getElementById("value").value;
+
+    if (key === "" || value === "") {
+        show("Enter key and value", true);
+        return;
+    }
+
+    fetch('/put', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: parseInt(key), value: parseInt(value) })
+    })
+    .then(res => res.json())
+    .then(() => {
+        show("Inserted / Updated");
+        refresh();
+    })
+    .catch(() => show("Server Error", true));
+}
+
+// ---------------- GET ----------------
+function get() {
+    let key = document.getElementById("key").value;
+
+    if (key === "") {
+        show("Enter key", true);
+        return;
+    }
+
+    fetch(`/get/${key}`)
+    .then(res => res.json())
+    .then(data => {
+        if (data.value !== undefined)
+            show("Value: " + data.value);
+        else
+            show("Not Found", true);
+
+        refresh();
+    })
+    .catch(() => show("Server Error", true));
+}
+
+// ---------------- RESET ----------------
+function reset() {
+    fetch('/reset')
+    .then(() => {
+        prevCache = [];
+        show("Cache Reset");
+        refresh();
+    })
+    .catch(() => show("Server Error", true));
+}
+
+// ---------------- MESSAGE ----------------
+function show(msg, error=false) {
+    let el = document.getElementById("result");
+    el.innerText = msg;
+    el.style.color = error ? "red" : "green";
+}
+
+// ---------------- REFRESH ----------------
+function refresh() {
+    fetch('/cache')
+    .then(res => res.json())
+    .then(data => {
+
+        let newKeys = data.map(item => Object.keys(item)[0]);
+        let oldKeys = prevCache.map(item => Object.keys(item)[0]);
+
+        let evictedKey = oldKeys.find(k => !newKeys.includes(k));
+
+        if (evictedKey !== undefined) {
+            document.querySelectorAll(".box").forEach(box => {
+                if (Number(box.dataset.key) === Number(evictedKey))
+                    box.classList.add("evicted");
+            });
+
+            setTimeout(() => render(data), 600);
+        } else {
+            render(data);
+        }
+
+        prevCache = data;
+    })
+    .catch(() => show("Server Error", true));
+}
+
+// ---------------- RENDER ----------------
+function render(data) {
+    let cacheDiv = document.getElementById("cache");
+    cacheDiv.innerHTML = "";
+
+    data.forEach((item, index) => {
+        let key = Object.keys(item)[0];
+        let value = item[key];
+
+        let div = document.createElement("div");
+        div.classList.add("box");
+        div.classList.add(index === 0 ? "recent" : "normal");
+        div.dataset.key = key;
+
+        div.innerText = `${key}:${value}`;
+
+        cacheDiv.appendChild(div);
+    });
+}
+
+// ---------------- INITIAL LOAD ----------------
+window.onload = refresh;
+
+</script>
+
+</body>
+</html>
