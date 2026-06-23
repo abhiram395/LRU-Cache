@@ -1,277 +1,1390 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>LRU Cache Visualizer</title>
 
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f9;
-            margin: 0;
+        :root {
+            --bg: #eef4fb;
+            --surface: #ffffff;
+            --surface-soft: #f7fafd;
+            --ink: #0e1f35;
+            --muted: #64748b;
+            --border: #d9e4f0;
+            --blue: #2563eb;
+            --blue-dark: #1d4ed8;
+            --cyan: #06b6d4;
+            --green: #16a34a;
+            --amber: #f59e0b;
+            --red: #dc2626;
+            --shadow: 0 18px 45px rgba(15, 35, 64, 0.12);
+            --radius: 8px;
         }
 
-        .container {
-            width: 800px;
-            margin: 40px auto;
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            background:
+                linear-gradient(140deg, rgba(37, 99, 235, 0.08), transparent 36%),
+                linear-gradient(320deg, rgba(6, 182, 212, 0.12), transparent 34%),
+                var(--bg);
+            color: var(--ink);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        button,
+        input,
+        select,
+        textarea {
+            font: inherit;
+        }
+
+        .app {
+            width: min(1180px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 26px 0 34px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-mark {
+            display: grid;
+            width: 44px;
+            height: 44px;
+            place-items: center;
+            border-radius: var(--radius);
+            background: #0f2544;
+            color: white;
+            font-weight: 800;
+            letter-spacing: 0;
+            box-shadow: var(--shadow);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(1.65rem, 3vw, 2.4rem);
+            line-height: 1.05;
+            letter-spacing: 0;
+        }
+
+        .subtitle {
+            margin: 5px 0 0;
+            color: var(--muted);
+            font-size: 0.98rem;
+        }
+
+        .top-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .panel {
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: var(--shadow);
+        }
+
+        .control-panel {
+            display: grid;
+            grid-template-columns: 0.75fr 1fr 1fr 1fr auto auto auto;
+            gap: 12px;
+            align-items: end;
+            padding: 16px;
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: grid;
+            gap: 7px;
+            color: var(--muted);
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 7px;
             background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+            color: var(--ink);
+            padding: 11px 12px;
+            outline: none;
+        }
+
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+        }
+
+        input:disabled,
+        select:disabled,
+        textarea:disabled {
+            cursor: not-allowed;
+            color: #94a3b8;
+            background: #eef3f8;
+        }
+
+        .button {
+            min-height: 42px;
+            border: 0;
+            border-radius: 7px;
+            padding: 0 15px;
+            color: white;
+            background: var(--blue);
+            font-size: 0.91rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+        }
+
+        .button:hover {
+            background: var(--blue-dark);
+            box-shadow: 0 10px 22px rgba(37, 99, 235, 0.22);
+            transform: translateY(-1px);
+        }
+
+        .button:disabled {
+            cursor: not-allowed;
+            background: #94a3b8;
+            color: white;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .button.secondary {
+            border: 1px solid var(--border);
+            color: var(--ink);
+            background: white;
+        }
+
+        .button.secondary:hover {
+            background: var(--surface-soft);
+            box-shadow: none;
+        }
+
+        .button.success {
+            background: var(--green);
+        }
+
+        .button.warning {
+            background: var(--amber);
+        }
+
+        .button.compact {
+            min-height: 34px;
+            padding: 0 11px;
+            font-size: 0.82rem;
+        }
+
+        .button.secondary:disabled,
+        .button.success:disabled,
+        .button.warning:disabled {
+            cursor: not-allowed;
+            border-color: #cbd5e1;
+            color: white;
+            background: #94a3b8;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .status-line {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 16px;
+            margin-bottom: 18px;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .status-line strong {
+            color: var(--ink);
+        }
+
+        .status-line.error strong {
+            color: var(--red);
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(0, 1.65fr) minmax(300px, 0.85fr);
+            gap: 18px;
+            align-items: start;
+        }
+
+        .main-panel,
+        .side-panel {
+            padding: 18px;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        h2,
+        h3 {
+            margin: 0;
+            letter-spacing: 0;
         }
 
         h2 {
-            text-align: center;
+            font-size: 1.2rem;
         }
 
-        .controls {
+        h3 {
+            font-size: 1rem;
+        }
+
+        .hint {
+            margin: 5px 0 0;
+            color: var(--muted);
+            font-size: 0.91rem;
+        }
+
+        .capacity-meter {
+            min-width: 172px;
+        }
+
+        .meter-label {
             display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: var(--muted);
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
         }
 
-        input {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            flex: 1;
+        .meter-track {
+            height: 9px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: #dbeafe;
         }
 
-        button {
-            padding: 8px 14px;
-            border: none;
-            border-radius: 5px;
-            background: #3498db;
-            color: white;
-            cursor: pointer;
+        .meter-fill {
+            width: 0;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--cyan), var(--blue));
+            transition: width 260ms ease;
         }
 
-        button:hover {
-            background: #2980b9;
-        }
-
-        button:disabled {
-            background: gray;
-            cursor: not-allowed;
-        }
-
-        #result {
-            margin-top: 10px;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        #cache {
-            display: flex;
-            justify-content: center;
-            margin-top: 25px;
-            flex-wrap: wrap;
-        }
-
-        .box {
-            width: 80px;
-            height: 55px;
-            margin: 6px;
+        .cache-lane {
+            min-height: 220px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            color: white;
-            border-radius: 6px;
-            font-weight: bold;
-            transition: all 0.3s ease;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 22px 4px 28px;
         }
 
-        .recent {
-            background: #2ecc71;
+        .sentinel,
+        .cache-node,
+        .empty-slot {
+            flex: 0 0 auto;
+            border-radius: var(--radius);
         }
 
-        .normal {
-            background: #3498db;
+        .sentinel {
+            display: grid;
+            width: 82px;
+            min-height: 90px;
+            place-items: center;
+            border: 1px dashed #9db4cf;
+            color: #36506d;
+            background: var(--surface-soft);
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 900;
+            text-transform: uppercase;
         }
 
-        .evicted {
-            background: #e74c3c !important;
-            animation: fadeOut 0.6s forwards;
+        .cache-node {
+            position: relative;
+            display: grid;
+            width: 126px;
+            min-height: 118px;
+            padding: 13px;
+            border: 1px solid rgba(37, 99, 235, 0.24);
+            background: white;
+            box-shadow: 0 16px 30px rgba(18, 38, 67, 0.1);
+            animation: nodeEnter 260ms ease both;
         }
 
-        @keyframes fadeOut {
-            0% { opacity: 1; transform: scale(1); }
-            100% { opacity: 0; transform: scale(0.5); }
+        .cache-node.mru {
+            border-color: rgba(22, 163, 74, 0.45);
+            background: linear-gradient(180deg, #f0fdf4, #ffffff);
         }
 
-        .section {
-            margin-top: 20px;
+        .cache-node.lru {
+            border-color: rgba(245, 158, 11, 0.48);
+            background: linear-gradient(180deg, #fff7ed, #ffffff);
         }
 
-        .label {
-            font-size: 14px;
-            margin-bottom: 5px;
+        .cache-node.mru.lru {
+            border-color: rgba(6, 182, 212, 0.45);
+            background: linear-gradient(180deg, #ecfeff, #ffffff);
+        }
+
+        .cache-node.active {
+            outline: 3px solid rgba(37, 99, 235, 0.15);
+        }
+
+        .node-role {
+            color: var(--muted);
+            font-size: 0.68rem;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .node-key {
+            margin-top: 10px;
+            font-size: 1.55rem;
+            font-weight: 900;
+        }
+
+        .node-value {
+            margin-top: 4px;
+            color: var(--muted);
+            font-weight: 750;
+            word-break: break-word;
+        }
+
+        .empty-slot {
+            display: grid;
+            width: 96px;
+            min-height: 92px;
+            place-items: center;
+            border: 1px dashed var(--border);
+            color: #94a3b8;
+            background: rgba(247, 250, 253, 0.8);
+            font-size: 0.8rem;
+            font-weight: 800;
+        }
+
+        .link-arrow {
+            flex: 0 0 auto;
+            color: #7891ad;
+            font-size: 1.2rem;
+            font-weight: 900;
+        }
+
+        .empty-state {
+            display: grid;
+            min-height: 150px;
+            place-items: center;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--muted);
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: var(--blue);
+        }
+
+        .dot.green {
+            background: var(--green);
+        }
+
+        .dot.amber {
+            background: var(--amber);
+        }
+
+        .dot.red {
+            background: var(--red);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .stat {
+            padding: 13px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface-soft);
+        }
+
+        .stat-value {
+            font-size: 1.35rem;
+            font-weight: 900;
+        }
+
+        .stat-label {
+            margin-top: 2px;
+            color: var(--muted);
+            font-size: 0.76rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .side-stack {
+            display: grid;
+            gap: 18px;
+        }
+
+        .mini-panel {
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mini-panel:last-child {
+            padding-bottom: 0;
+            border-bottom: 0;
+        }
+
+        .steps {
+            margin: 12px 0 0;
+            padding-left: 20px;
+            color: var(--ink);
+        }
+
+        .steps li {
+            margin: 9px 0;
+            color: #233954;
+            line-height: 1.45;
+        }
+
+        .hash-list,
+        .history-list {
+            display: grid;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .hash-row,
+        .history-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 11px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            background: var(--surface-soft);
+            color: #233954;
+            font-size: 0.9rem;
+        }
+
+        .hash-row code {
+            border-radius: 5px;
+            background: #e8f1fb;
+            padding: 3px 6px;
+            color: #0f3d6e;
+            font-weight: 800;
+        }
+
+        .history-row {
+            align-items: start;
+            flex-direction: column;
+        }
+
+        .history-row strong {
+            color: var(--ink);
+        }
+
+        .history-row span {
+            color: var(--muted);
+            line-height: 1.35;
+        }
+
+        .history-actions,
+        .advisor-actions,
+        .step-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .advisor-result {
+            margin-top: 12px;
+            padding: 11px;
+            border: 1px solid #bfdbfe;
+            border-radius: 7px;
+            background: #eff6ff;
+            color: #173b70;
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+
+        .mode-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: var(--muted);
+            font-size: 0.88rem;
+            font-weight: 800;
+        }
+
+        .mode-row input {
+            width: auto;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        @keyframes nodeEnter {
+            from {
+                opacity: 0;
+                transform: translateY(8px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @media (max-width: 940px) {
+            .topbar,
+            .workspace,
+            .control-panel {
+                grid-template-columns: 1fr;
+            }
+
+            .topbar {
+                align-items: stretch;
+            }
+
+            .top-actions,
+            .panel-header {
+                justify-content: flex-start;
+            }
+
+            .control-panel {
+                align-items: stretch;
+            }
+
+            .button {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .app {
+                width: min(100% - 20px, 1180px);
+                padding-top: 16px;
+            }
+
+            .brand {
+                align-items: flex-start;
+            }
+
+            .brand-mark {
+                width: 38px;
+                height: 38px;
+            }
+
+            .status-line,
+            .panel-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .main-panel,
+            .side-panel {
+                padding: 14px;
+            }
+
+            .cache-node {
+                width: 112px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                scroll-behavior: auto !important;
+                transition: none !important;
+                animation: none !important;
+            }
         }
     </style>
 </head>
 
 <body>
+    <main class="app">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-mark">LRU</div>
+                <div>
+                    <h1>LRU Cache Visualizer</h1>
+                    <p class="subtitle">Watch every GET and PUT update the linked list and hash map.</p>
+                </div>
+            </div>
+            <div class="top-actions">
+                <button class="button secondary" id="refreshBtn" type="button">Refresh</button>
+                <button class="button secondary" id="resetBtn" type="button">Reset</button>
+                <button class="button warning" id="demoBtn" type="button">Run Demo</button>
+            </div>
+        </header>
 
-<div class="container">
+        <section class="panel control-panel" aria-label="Cache controls">
+            <label>
+                Capacity
+                <input id="capacityInput" type="number" min="1" placeholder="Example: 3">
+            </label>
+            <label>
+                Policy
+                <select id="policyInput">
+                    <option value="LRU">LRU - Least Recently Used</option>
+                    <option value="FIFO">FIFO - First In First Out</option>
+                    <option value="LFU">LFU - Least Frequently Used</option>
+                    <option value="MRU">MRU - Most Recently Used</option>
+                </select>
+            </label>
+            <label>
+                Key
+                <input id="keyInput" type="number" placeholder="Example: 2">
+            </label>
+            <label>
+                Value
+                <input id="valueInput" type="number" placeholder="Example: 200">
+            </label>
+            <button class="button secondary" id="capacityBtn" type="button">Set Capacity</button>
+            <button class="button success" id="putBtn" type="button">PUT</button>
+            <button class="button" id="getBtn" type="button">GET</button>
+        </section>
 
-<h2>LRU Cache Visualizer</h2>
+        <section class="panel status-line" id="statusLine" aria-live="polite">
+            <strong id="statusText">Ready.</strong>
+            <span id="orderText">Most recent items appear on the left.</span>
+        </section>
 
-<div class="section">
-    <div class="label">Key / Value Input</div>
-    <div class="controls">
-        <input type="number" id="key" placeholder="Key">
-        <input type="number" id="value" placeholder="Value">
-    </div>
-</div>
+        <div class="workspace">
+            <section class="panel main-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Doubly Linked List View</h2>
+                        <p class="hint" id="laneHint">The left side is protected. The right side is evicted first.</p>
+                    </div>
+                    <div class="capacity-meter" aria-label="Cache capacity meter">
+                        <div class="meter-label">
+                            <span>Capacity</span>
+                            <span id="capacityText">0 / 0</span>
+                        </div>
+                        <div class="meter-track">
+                            <div class="meter-fill" id="capacityFill"></div>
+                        </div>
+                    </div>
+                </div>
 
-<div class="section">
-    <div class="controls">
-        <button id="putBtn" onclick="put()">PUT</button>
-        <button onclick="get()">GET</button>
-        <button onclick="refresh()">Refresh</button>
-        <button onclick="reset()">Reset</button>
-    </div>
-</div>
+                <div class="cache-lane" id="cacheLane" aria-label="Current cache state"></div>
 
-<div id="result"></div>
+                <div class="legend" aria-label="Legend">
+                    <div class="legend-item"><span class="dot green"></span>Most recent</div>
+                    <div class="legend-item"><span class="dot"></span>Cached node</div>
+                    <div class="legend-item"><span class="dot amber"></span>Least recent</div>
+                    <div class="legend-item"><span class="dot red"></span>Evicted on overflow</div>
+                </div>
 
-<h4 style="text-align:center; margin-top:20px;">
-    Cache State (Most Recent → Left)
-</h4>
+                <div class="stats-grid">
+                    <div class="stat">
+                        <div class="stat-value" id="hitsStat">0</div>
+                        <div class="stat-label">Hits</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="missesStat">0</div>
+                        <div class="stat-label">Misses</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="evictionsStat">0</div>
+                        <div class="stat-label">Evictions</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="hitRateStat">0%</div>
+                        <div class="stat-label">Hit Rate</div>
+                    </div>
+                </div>
+            </section>
 
-<div id="cache"></div>
+            <aside class="panel side-panel">
+                <div class="side-stack">
+                    <section class="mini-panel">
+                        <h3>Current Operation</h3>
+                        <ol class="steps" id="stepsList">
+                            <li>Start by inserting a key/value pair or running the demo.</li>
+                        </ol>
+                        <div class="step-actions">
+                            <label class="mode-row">
+                                <input id="stepModeInput" type="checkbox">
+                                Step mode
+                            </label>
+                            <button class="button secondary compact" id="nextStepBtn" type="button" disabled>Next Step</button>
+                        </div>
+                    </section>
 
-</div>
+                    <section class="mini-panel">
+                        <h3>AI Policy Advisor</h3>
+                        <p class="hint">Describe your workload and get a local recommendation.</p>
+                        <label>
+                            Workload
+                            <textarea id="advisorWorkload" placeholder="Example: users repeatedly open the same profile pages"></textarea>
+                        </label>
+                        <label>
+                            Priority
+                            <select id="advisorPriority">
+                                <option value="hit-rate">Best hit rate</option>
+                                <option value="simplicity">Simplicity</option>
+                                <option value="scan-heavy">Sequential scans</option>
+                                <option value="insertion-order">Insertion order</option>
+                            </select>
+                        </label>
+                        <div class="advisor-actions">
+                            <button class="button compact" id="advisorBtn" type="button">Recommend Policy</button>
+                            <button class="button secondary compact" id="applyAdvisorBtn" type="button" disabled>Apply</button>
+                        </div>
+                        <div class="advisor-result" id="advisorResult">No recommendation yet.</div>
+                    </section>
 
-<script>
+                    <section class="mini-panel">
+                        <h3>Hash Map</h3>
+                        <p class="hint">Keys point directly to nodes, which gives O(1) lookup.</p>
+                        <div class="hash-list" id="hashList"></div>
+                    </section>
 
-let prevCache = [];
+                    <section class="mini-panel">
+                        <h3>Operation History</h3>
+                        <div class="history-list" id="historyList"></div>
+                        <div class="history-actions">
+                            <button class="button secondary compact" id="exportHistoryBtn" type="button">Export JSON</button>
+                        </div>
+                    </section>
+                </div>
+            </aside>
+        </div>
+    </main>
 
-// ---------------- BUTTON CONTROL ----------------
-document.getElementById("key").addEventListener("input", toggleButtons);
-document.getElementById("value").addEventListener("input", toggleButtons);
+    <script>
+        const els = {
+            capacityInput: document.getElementById("capacityInput"),
+            policyInput: document.getElementById("policyInput"),
+            keyInput: document.getElementById("keyInput"),
+            valueInput: document.getElementById("valueInput"),
+            capacityBtn: document.getElementById("capacityBtn"),
+            putBtn: document.getElementById("putBtn"),
+            getBtn: document.getElementById("getBtn"),
+            refreshBtn: document.getElementById("refreshBtn"),
+            resetBtn: document.getElementById("resetBtn"),
+            demoBtn: document.getElementById("demoBtn"),
+            statusLine: document.getElementById("statusLine"),
+            statusText: document.getElementById("statusText"),
+            orderText: document.getElementById("orderText"),
+            laneHint: document.getElementById("laneHint"),
+            cacheLane: document.getElementById("cacheLane"),
+            capacityText: document.getElementById("capacityText"),
+            capacityFill: document.getElementById("capacityFill"),
+            hitsStat: document.getElementById("hitsStat"),
+            missesStat: document.getElementById("missesStat"),
+            evictionsStat: document.getElementById("evictionsStat"),
+            hitRateStat: document.getElementById("hitRateStat"),
+            stepsList: document.getElementById("stepsList"),
+            stepModeInput: document.getElementById("stepModeInput"),
+            nextStepBtn: document.getElementById("nextStepBtn"),
+            hashList: document.getElementById("hashList"),
+            historyList: document.getElementById("historyList"),
+            advisorWorkload: document.getElementById("advisorWorkload"),
+            advisorPriority: document.getElementById("advisorPriority"),
+            advisorBtn: document.getElementById("advisorBtn"),
+            applyAdvisorBtn: document.getElementById("applyAdvisorBtn"),
+            advisorResult: document.getElementById("advisorResult"),
+            exportHistoryBtn: document.getElementById("exportHistoryBtn"),
+        };
 
-function toggleButtons() {
-    let key = document.getElementById("key").value;
-    let value = document.getElementById("value").value;
+        const appState = {
+            history: [],
+            exportHistory: [],
+            activeKey: null,
+            capacitySet: false,
+            pendingSteps: [],
+            visibleStepCount: 0,
+            advisorPolicy: null,
+            isDemoRunning: false,
+            demo: [
+                { type: "put", key: 1, value: 100 },
+                { type: "put", key: 2, value: 200 },
+                { type: "put", key: 3, value: 300 },
+                { type: "get", key: 1 },
+                { type: "put", key: 4, value: 400 },
+                { type: "get", key: 2 },
+                { type: "put", key: 5, value: 500 },
+            ],
+        };
 
-    document.getElementById("putBtn").disabled = !(key && value);
-}
-
-// ---------------- PUT ----------------
-function put() {
-    let key = document.getElementById("key").value;
-    let value = document.getElementById("value").value;
-
-    if (key === "" || value === "") {
-        show("Enter key and value", true);
-        return;
-    }
-
-    fetch('/put', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: parseInt(key), value: parseInt(value) })
-    })
-    .then(res => res.json())
-    .then(() => {
-        show("Inserted / Updated");
-        refresh();
-    })
-    .catch(() => show("Server Error", true));
-}
-
-// ---------------- GET ----------------
-function get() {
-    let key = document.getElementById("key").value;
-
-    if (key === "") {
-        show("Enter key", true);
-        return;
-    }
-
-    fetch(`/get/${key}`)
-    .then(res => res.json())
-    .then(data => {
-        if (data.value !== undefined)
-            show("Value: " + data.value);
-        else
-            show("Not Found", true);
-
-        refresh();
-    })
-    .catch(() => show("Server Error", true));
-}
-
-// ---------------- RESET ----------------
-function reset() {
-    fetch('/reset')
-    .then(() => {
-        prevCache = [];
-        show("Cache Reset");
-        refresh();
-    })
-    .catch(() => show("Server Error", true));
-}
-
-// ---------------- MESSAGE ----------------
-function show(msg, error=false) {
-    let el = document.getElementById("result");
-    el.innerText = msg;
-    el.style.color = error ? "red" : "green";
-}
-
-// ---------------- REFRESH ----------------
-function refresh() {
-    fetch('/cache')
-    .then(res => res.json())
-    .then(data => {
-
-        let newKeys = data.map(item => Object.keys(item)[0]);
-        let oldKeys = prevCache.map(item => Object.keys(item)[0]);
-
-        let evictedKey = oldKeys.find(k => !newKeys.includes(k));
-
-        if (evictedKey !== undefined) {
-            document.querySelectorAll(".box").forEach(box => {
-                if (Number(box.dataset.key) === Number(evictedKey))
-                    box.classList.add("evicted");
-            });
-
-            setTimeout(() => render(data), 600);
-        } else {
-            render(data);
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         }
 
-        prevCache = data;
-    })
-    .catch(() => show("Server Error", true));
-}
+        async function requestJson(url, options = {}) {
+            const response = await fetch(url, options);
+            const data = await response.json();
+            return { ok: response.ok, data };
+        }
 
-// ---------------- RENDER ----------------
-function render(data) {
-    let cacheDiv = document.getElementById("cache");
-    cacheDiv.innerHTML = "";
+        function setStatus(message, isError = false) {
+            els.statusText.textContent = message;
+            els.statusLine.classList.toggle("error", isError);
+        }
 
-    data.forEach((item, index) => {
-        let key = Object.keys(item)[0];
-        let value = item[key];
+        function setVisualizerLocked(isLocked) {
+            els.keyInput.disabled = isLocked;
+            els.valueInput.disabled = isLocked;
+            els.putBtn.disabled = isLocked;
+            els.getBtn.disabled = isLocked;
+            els.refreshBtn.disabled = isLocked;
+            els.resetBtn.disabled = isLocked;
+            els.demoBtn.disabled = isLocked || appState.isDemoRunning;
+        }
 
-        let div = document.createElement("div");
-        div.classList.add("box");
-        div.classList.add(index === 0 ? "recent" : "normal");
-        div.dataset.key = key;
+        function renderSetupState() {
+            appState.activeKey = null;
+            appState.capacitySet = false;
+            appState.history = [];
+            appState.exportHistory = [];
+            appState.pendingSteps = [];
+            appState.visibleStepCount = 0;
+            els.keyInput.value = "";
+            els.valueInput.value = "";
+            els.capacityText.textContent = "Not set";
+            els.capacityFill.style.width = "0%";
+            els.orderText.textContent = "Set capacity first to unlock the visualizer.";
+            els.laneHint.textContent = "The left side is protected. The right side is evicted first.";
+            els.cacheLane.innerHTML = `
+                <div class="empty-state">Set the cache capacity to begin visualising LRU operations.</div>
+            `;
+            renderStats({ hits: 0, misses: 0, evictions: 0, hitRate: 0 });
+            renderHashMap([]);
+            renderSteps(["Choose a positive cache capacity.", "Click Set Capacity.", "Then enter keys and values to run GET and PUT."]);
+            renderHistory();
+            setStatus("Set cache capacity to begin.");
+            setVisualizerLocked(true);
+        }
 
-        div.innerText = `${key}:${value}`;
+        function addHistory(operation, message) {
+            if (!operation) {
+                return;
+            }
 
-        cacheDiv.appendChild(div);
-    });
-}
+            const label = operation.type ? operation.type.toUpperCase() : "ACTION";
+            appState.history.unshift({
+                label,
+                message,
+                steps: operation.steps || [],
+            });
 
-// ---------------- INITIAL LOAD ----------------
-window.onload = refresh;
+            appState.exportHistory.unshift({
+                at: new Date().toISOString(),
+                policy: els.policyInput.value,
+                type: operation.type || "action",
+                key: operation.key,
+                value: operation.value,
+                found: operation.found,
+                evicted: operation.evicted,
+                message,
+                steps: operation.steps || [],
+            });
 
-</script>
+            appState.history = appState.history.slice(0, 6);
+            renderHistory();
+        }
 
+        function renderHistory() {
+            if (!appState.history.length) {
+                els.historyList.innerHTML = '<p class="muted">No operations yet.</p>';
+                return;
+            }
+
+            els.historyList.innerHTML = appState.history.map((entry) => `
+                <div class="history-row">
+                    <strong>${escapeHtml(entry.label)}</strong>
+                    <span>${escapeHtml(entry.message)}</span>
+                </div>
+            `).join("");
+        }
+
+        function updateNextStepButton() {
+            els.nextStepBtn.disabled = !els.stepModeInput.checked || appState.visibleStepCount >= appState.pendingSteps.length;
+        }
+
+        function renderSteps(steps = [], resetProgress = true) {
+            appState.pendingSteps = steps;
+
+            if (resetProgress) {
+                appState.visibleStepCount = els.stepModeInput.checked ? Math.min(1, steps.length) : steps.length;
+            }
+
+            const visibleSteps = els.stepModeInput.checked
+                ? steps.slice(0, appState.visibleStepCount)
+                : steps;
+
+            els.stepsList.innerHTML = visibleSteps.map((step) => `
+                <li>${escapeHtml(step)}</li>
+            `).join("");
+
+            updateNextStepButton();
+        }
+
+        function renderStats(stats) {
+            els.hitsStat.textContent = stats.hits;
+            els.missesStat.textContent = stats.misses;
+            els.evictionsStat.textContent = stats.evictions;
+            els.hitRateStat.textContent = `${stats.hitRate}%`;
+        }
+
+        function renderHashMap(items) {
+            if (!items.length) {
+                els.hashList.innerHTML = '<p class="muted">The hash map is empty.</p>';
+                return;
+            }
+
+            els.hashList.innerHTML = items.map((item) => `
+                <div class="hash-row">
+                    <span><code>${escapeHtml(item.key)}</code> maps to node</span>
+                    <strong>${escapeHtml(item.value)}</strong>
+                </div>
+            `).join("");
+        }
+
+        function nodeRole(item) {
+            if (item.isEvictionCandidate) {
+                return "Evicted First";
+            }
+
+            if (item.isProtected) {
+                return "Protected";
+            }
+
+            if (item.isMostRecent && item.isLeastRecent) {
+                return "Only Node";
+            }
+
+            if (item.isMostRecent) {
+                return "Most Recent";
+            }
+
+            if (item.isLeastRecent) {
+                return "Least Recent";
+            }
+
+            return `Position ${item.position}`;
+        }
+
+        function renderCache(snapshot) {
+            const items = snapshot.items || [];
+            const capacity = snapshot.capacity || 1;
+            const usedPercent = Math.min(100, Math.round((items.length / capacity) * 100));
+            const labels = snapshot.visualLabels || {
+                left: "Protected",
+                right: "Evicted first",
+                order: "Cache order",
+                movement: "",
+            };
+
+            els.capacityInput.value = capacity;
+            els.policyInput.value = snapshot.policy ? snapshot.policy.code : els.policyInput.value;
+            els.capacityText.textContent = `${items.length} / ${capacity}`;
+            els.capacityFill.style.width = `${usedPercent}%`;
+            els.laneHint.textContent = `${labels.left} on the left. ${labels.right} on the right.`;
+            els.orderText.textContent = items.length
+                ? `${labels.order}: ${items.map((item) => item.key).join(" -> ")}`
+                : `${labels.order}. ${labels.movement}`;
+
+            if (!items.length) {
+                els.cacheLane.innerHTML = `
+                    <div class="sentinel">${escapeHtml(labels.left)}</div>
+                    <div class="link-arrow">&harr;</div>
+                    <div class="empty-state">Cache is empty. Add a key/value pair to begin.</div>
+                    <div class="link-arrow">&harr;</div>
+                    <div class="sentinel">${escapeHtml(labels.right)}</div>
+                `;
+                return;
+            }
+
+            const emptySlots = Math.max(0, capacity - items.length);
+            const nodes = items.map((item) => {
+                const classes = [
+                    "cache-node",
+                    item.isProtected ? "mru" : "",
+                    item.isEvictionCandidate ? "lru" : "",
+                    Number(item.key) === Number(appState.activeKey) ? "active" : "",
+                ].filter(Boolean).join(" ");
+
+                return `
+                    <div class="${classes}" data-key="${escapeHtml(item.key)}">
+                        <div class="node-role">${escapeHtml(nodeRole(item))}</div>
+                        <div class="node-key">K ${escapeHtml(item.key)}</div>
+                        <div class="node-value">Value ${escapeHtml(item.value)}</div>
+                        <div class="node-role">Freq ${escapeHtml(item.frequency)}</div>
+                    </div>
+                `;
+            });
+
+            const slots = Array.from({ length: emptySlots }, (_, index) => `
+                <div class="empty-slot">Open<br>slot ${index + 1}</div>
+            `);
+
+            els.cacheLane.innerHTML = [
+                `<div class="sentinel">${escapeHtml(labels.left)}</div>`,
+                ...nodes,
+                ...slots,
+                `<div class="sentinel">${escapeHtml(labels.right)}</div>`,
+            ].join('<div class="link-arrow">&harr;</div>');
+        }
+
+        function renderSnapshot(snapshot, operation = null) {
+            appState.activeKey = operation && operation.key !== undefined ? operation.key : null;
+            renderCache(snapshot);
+            renderStats(snapshot.stats);
+            renderHashMap(snapshot.items || []);
+            renderSteps(operation ? operation.steps : ["State refreshed from the server."]);
+        }
+
+        async function refresh() {
+            try {
+                const { data } = await requestJson("/state");
+                renderSnapshot(data);
+                setStatus("State refreshed.");
+            } catch (error) {
+                setStatus("Could not refresh the cache state.", true);
+            }
+        }
+
+        async function putValue() {
+            if (!appState.capacitySet) {
+                setStatus("Set capacity before using PUT.", true);
+                return;
+            }
+
+            const key = els.keyInput.value;
+            const value = els.valueInput.value;
+
+            if (key === "" || value === "") {
+                setStatus("Enter both a key and a value before PUT.", true);
+                return;
+            }
+
+            try {
+                const { ok, data } = await requestJson("/put", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ key, value }),
+                });
+
+                renderSnapshot(data.snapshot, data.operation);
+                addHistory(data.operation, data.message);
+                setStatus(data.message, !ok);
+            } catch (error) {
+                setStatus("Server error while running PUT.", true);
+            }
+        }
+
+        async function getValue() {
+            if (!appState.capacitySet) {
+                setStatus("Set capacity before using GET.", true);
+                return;
+            }
+
+            const key = els.keyInput.value;
+
+            if (key === "") {
+                setStatus("Enter a key before GET.", true);
+                return;
+            }
+
+            try {
+                const { ok, data } = await requestJson(`/get/${encodeURIComponent(key)}`);
+                renderSnapshot(data.snapshot, data.operation);
+                addHistory(data.operation, data.message);
+                setStatus(data.message, !ok);
+            } catch (error) {
+                setStatus("Server error while running GET.", true);
+            }
+        }
+
+        async function setCapacity() {
+            const capacity = els.capacityInput.value;
+
+            if (capacity === "" || Number(capacity) < 1) {
+                setStatus("Capacity must be at least 1.", true);
+                return;
+            }
+
+            try {
+                const isInitialSetup = !appState.capacitySet;
+                const { ok, data } = await requestJson(isInitialSetup ? "/reset" : "/capacity", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ capacity, policy: els.policyInput.value }),
+                });
+
+                appState.capacitySet = true;
+                setVisualizerLocked(false);
+
+                if (isInitialSetup) {
+                    data.message = `Capacity set to ${data.snapshot.capacity}. Cache is ready.`;
+                    data.operation = {
+                        type: "capacity",
+                        capacity: data.snapshot.capacity,
+                        steps: [
+                            `Capacity set to ${data.snapshot.capacity}.`,
+                            `Policy set to ${data.snapshot.policy.code}: ${data.snapshot.policy.name}.`,
+                            "Key and value fields are now unlocked.",
+                            data.snapshot.visualLabels.movement,
+                        ],
+                    };
+                }
+
+                renderSnapshot(data.snapshot, data.operation);
+                addHistory(data.operation, data.message);
+                setStatus(data.message, !ok);
+            } catch (error) {
+                setStatus("Server error while changing capacity.", true);
+            }
+        }
+
+        async function resetCache() {
+            appState.history = [];
+            appState.exportHistory = [];
+            renderHistory();
+
+            try {
+                const { data } = await requestJson("/reset", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ capacity: els.capacityInput.value || 3, policy: els.policyInput.value }),
+                });
+
+                appState.capacitySet = true;
+                setVisualizerLocked(false);
+                renderSnapshot(data.snapshot, data.operation);
+                setStatus(data.message);
+            } catch (error) {
+                setStatus("Server error while resetting cache.", true);
+            }
+        }
+
+        function wait(ms) {
+            return new Promise((resolve) => setTimeout(resolve, ms));
+        }
+
+        async function changePolicy() {
+            if (!appState.capacitySet) {
+                return;
+            }
+
+            try {
+                const { ok, data } = await requestJson("/policy", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ policy: els.policyInput.value }),
+                });
+
+                renderSnapshot(data.snapshot, data.operation);
+                addHistory(data.operation, data.message);
+                setStatus(data.message, !ok);
+            } catch (error) {
+                setStatus("Server error while changing policy.", true);
+            }
+        }
+
+        function showNextStep() {
+            if (!els.stepModeInput.checked || appState.visibleStepCount >= appState.pendingSteps.length) {
+                return;
+            }
+
+            appState.visibleStepCount += 1;
+            renderSteps(appState.pendingSteps, false);
+        }
+
+        function toggleStepMode() {
+            appState.visibleStepCount = els.stepModeInput.checked
+                ? Math.min(1, appState.pendingSteps.length)
+                : appState.pendingSteps.length;
+            renderSteps(appState.pendingSteps, false);
+        }
+
+        async function recommendPolicy() {
+            try {
+                const { ok, data } = await requestJson("/recommend-policy", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        workload: els.advisorWorkload.value,
+                        priority: els.advisorPriority.value,
+                    }),
+                });
+
+                if (!ok) {
+                    setStatus("Could not recommend a policy.", true);
+                    return;
+                }
+
+                appState.advisorPolicy = data.recommended.code;
+                els.applyAdvisorBtn.disabled = false;
+                els.advisorResult.innerHTML = `
+                    <strong>${escapeHtml(data.recommended.code)} - ${escapeHtml(data.recommended.name)}</strong><br>
+                    ${escapeHtml(data.reasons.join(" "))}<br>
+                    <span class="muted">${escapeHtml(data.note)}</span>
+                `;
+            } catch (error) {
+                setStatus("Server error while asking the advisor.", true);
+            }
+        }
+
+        function applyAdvisorPolicy() {
+            if (!appState.advisorPolicy) {
+                return;
+            }
+
+            els.policyInput.value = appState.advisorPolicy;
+            changePolicy();
+            setStatus(`Advisor policy ${appState.advisorPolicy} selected.`);
+        }
+
+        function exportHistory() {
+            const payload = {
+                exportedAt: new Date().toISOString(),
+                policy: els.policyInput.value,
+                capacity: els.capacityInput.value,
+                history: appState.exportHistory,
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "lru-cache-history.json";
+            link.click();
+            URL.revokeObjectURL(url);
+            setStatus("Operation history exported as JSON.");
+        }
+
+        async function runDemo() {
+            if (appState.isDemoRunning) {
+                return;
+            }
+
+            appState.isDemoRunning = true;
+            els.demoBtn.disabled = true;
+            els.demoBtn.textContent = "Running...";
+
+            await resetCache();
+
+            for (const step of appState.demo) {
+                els.keyInput.value = step.key;
+                els.valueInput.value = step.value || "";
+
+                if (step.type === "put") {
+                    await putValue();
+                } else {
+                    await getValue();
+                }
+
+                await wait(900);
+            }
+
+            els.demoBtn.disabled = false;
+            els.demoBtn.textContent = "Run Demo";
+            appState.isDemoRunning = false;
+        }
+
+        els.putBtn.addEventListener("click", putValue);
+        els.getBtn.addEventListener("click", getValue);
+        els.capacityBtn.addEventListener("click", setCapacity);
+        els.policyInput.addEventListener("change", changePolicy);
+        els.refreshBtn.addEventListener("click", refresh);
+        els.resetBtn.addEventListener("click", resetCache);
+        els.demoBtn.addEventListener("click", runDemo);
+        els.stepModeInput.addEventListener("change", toggleStepMode);
+        els.nextStepBtn.addEventListener("click", showNextStep);
+        els.advisorBtn.addEventListener("click", recommendPolicy);
+        els.applyAdvisorBtn.addEventListener("click", applyAdvisorPolicy);
+        els.exportHistoryBtn.addEventListener("click", exportHistory);
+
+        els.keyInput.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                getValue();
+            }
+        });
+
+        els.valueInput.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                putValue();
+            }
+        });
+
+        renderSetupState();
+    </script>
 </body>
 </html>
