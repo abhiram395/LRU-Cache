@@ -78,6 +78,28 @@ class FlaskRouteTests(unittest.TestCase):
         self.assertEqual(state_response.json["size"], 1)
         self.assertEqual(state_response.json["policy"]["code"], "LRU")
 
+    def test_negative_key_can_be_updated_and_read(self):
+        self.client.post("/reset", json={"capacity": 4, "policy": "LRU"})
+
+        for _ in range(3):
+            response = self.client.post("/put", json={"key": -5, "value": 50})
+            self.assertEqual(response.status_code, 200)
+
+        update_response = self.client.post("/put", json={"key": -5, "value": 60})
+        get_response = self.client.get("/get/-5")
+
+        self.assertEqual(update_response.status_code, 200)
+        self.assertEqual(get_response.status_code, 200)
+        self.assertEqual(get_response.json["key"], -5)
+        self.assertEqual(get_response.json["value"], 60)
+        self.assertEqual(get_response.json["snapshot"]["size"], 1)
+
+    def test_invalid_get_key_returns_json_error(self):
+        response = self.client.get("/get/not-a-number")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json["message"], "Key must be a number")
+
     def test_policy_route_changes_active_policy(self):
         response = self.client.post("/policy", json={"policy": "LFU"})
 

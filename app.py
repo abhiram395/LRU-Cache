@@ -115,8 +115,13 @@ def put():
 
 
 # ---------------- GET ----------------
-@app.route('/get/<int:key>', methods=['GET'])
+@app.route('/get/<key>', methods=['GET'])
 def get(key):
+    try:
+        key = int(key)
+    except (TypeError, ValueError):
+        return jsonify({"message": "Key must be a number"}), 400
+
     value = cache.get(key)
 
     if value == -1:
